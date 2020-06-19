@@ -14,6 +14,7 @@
 #'
 #' @export
 
+#test <- "D:\\DEV\\Cyan_database\\GLRI\\GLRItest2_2.dB"
 connect_cyan <- function(path) {
 
   if(!file.exists(path)) {
@@ -22,7 +23,8 @@ connect_cyan <- function(path) {
 
   cyan_connection <- DBI::dbConnect(RSQLite::SQLite(), dbname = path)
   table_names <- DBI::dbListTables(cyan_connection)
-
+  table_names <- toupper(table_names)
+  #print(table_names)
   if(!(all(c("ACTIVITY", "LOCATION", "RESULT", "PARAMETER", "METHOD") %in% table_names))) {
     stop("not a valid CyAN database")
   }
@@ -30,7 +32,7 @@ connect_cyan <- function(path) {
   return(cyan_connection)
 
 }
-
+#x = connect_cyan(test)
 #' Generate an index of locations and parameters from the database
 #'
 #' Based on the CyAN database connection, generate an index of all unique combinations
@@ -51,19 +53,19 @@ connect_cyan <- function(path) {
 #'
 
 generate_location_index <- function(cyan_connection) {
-
+  print("here")
   LOCATION_ID <- LOCATION_NAME <- LATITUDE <- LONGITUDE <-
     ACTIVITY_ID <- PARAMETER_ID <- ".dplyr.var"
-
-  location <- dplyr::tbl(cyan_connection, "LOCATION")
+  print("here")
+  location <- dplyr::tbl(cyan_connection, "location")
   location <- dplyr::select(location, LOCATION_ID, LOCATION_NAME, LATITUDE, LONGITUDE)
   activity <- dplyr::tbl(cyan_connection, "ACTIVITY")
-  activity <- dplyr::select(activity, LOCATION_ID, ACTIVITY_ID)
+  activity <- dplyr::select(activity, LOCATION_ID, GLRI_ACTIVITY_ID)
   result <- dplyr::tbl(cyan_connection, "RESULT")
-  result <- dplyr::select(result, ACTIVITY_ID, PARAMETER_ID)
+  result <- dplyr::select(result, GLRI_ACTIVITY_ID, PARAMETER_ID)
 
   location_index <- dplyr::inner_join(location, activity, by = "LOCATION_ID")
-  location_index <- dplyr::inner_join(location_index, result, by = "ACTIVITY_ID")
+  location_index <- dplyr::inner_join(location_index, result, by = "GLRI_ACTIVITY_ID")
   location_index <- dplyr::select(location_index, LOCATION_ID, PARAMETER_ID)
   location_index <- dplyr::distinct(location_index)
   location_index <- dplyr::left_join(location_index, location, by = "LOCATION_ID")
@@ -74,6 +76,7 @@ generate_location_index <- function(cyan_connection) {
 
 }
 
+#y <- generate_location_index(x)
 #' Generate a table of parameter identifiers and their short names
 #'
 #' @param cyan_connection a CyAN database connection from \code{connect_cyan()}
@@ -115,7 +118,7 @@ generate_parameter_index <- function(cyan_connection, has_data = FALSE) {
   return(parameter_index)
 
 }
-
+#generate_parameter_index(x)
 #' Get data from CyAN
 #'
 #' Basic data query from the CyAN database based on a number of parameters,
@@ -183,7 +186,7 @@ get_cyan_data <- function(cyan_connection, collect = FALSE,
     COLLECTION_METHOD_ID <- SAMPLE_TYPE_CODE <- ACTIVITY_DEPTH <-
     ACTIVITY_DEPTH_UNIT <- ACTIVITY_TOP_DEPTH <- ACTIVITY_TOP_DEPTH_UNIT <-
     ACTIVITY_BOTTOM_DEPTH <- ACTIVITY_BOTTOM_DEPTH_UNIT <-
-    ACTIVITY_DEPTH_REFERENCE <- ACTIVITY_COMMENT <- RESULT_ID <- ACTIVITY_ID <-
+    ACTIVITY_DEPTH_REFERENCE <- ACTIVITY_COMMENT <- RESULT_ID <- GLRI_ACTIVITY_ID <-
     PARAMETER_ID <- METHOD_ID <- RESULT_DEPTH <- RESULT_DEPTH_UNIT <-
     RESULT_DEPTH_REFERENCE <- QUALIFIER <- RESULT_VALUE <- DETECTION_LIMIT_VALUE <-
     DETECTION_LIMIT_UNIT <- DETECTION_LIMIT_TYPE <- TIER <- CROSSWALK_ID <-
@@ -199,7 +202,7 @@ get_cyan_data <- function(cyan_connection, collect = FALSE,
 
   activity <- dplyr::tbl(cyan_connection, "ACTIVITY")
   activity <- dplyr::select(activity,
-                            ACTIVITY_ID, WQP_ACTIVITY_ID, START_DATE, START_TIME, END_DATE, END_TIME, TZ,
+                            GLRI_ACTIVITY_ID, WQP_ACTIVITY_ID, START_DATE, START_TIME, END_DATE, END_TIME, TZ,
                             LOCATION_ID, COLLECTION_METHOD_ID, SAMPLE_TYPE_CODE, ACTIVITY_DEPTH,
                             ACTIVITY_DEPTH_UNIT, ACTIVITY_TOP_DEPTH, ACTIVITY_TOP_DEPTH_UNIT,
                             ACTIVITY_BOTTOM_DEPTH, ACTIVITY_BOTTOM_DEPTH_UNIT,
@@ -209,7 +212,7 @@ get_cyan_data <- function(cyan_connection, collect = FALSE,
 
   result <- dplyr::tbl(cyan_connection, "RESULT")
   result <- dplyr::select(result,
-                          RESULT_ID, ACTIVITY_ID, PARAMETER_ID, METHOD_ID, RESULT_DEPTH,
+                          RESULT_ID, GLRI_ACTIVITY_ID, PARAMETER_ID, METHOD_ID, RESULT_DEPTH,
                           RESULT_DEPTH_UNIT, RESULT_DEPTH_REFERENCE, QUALIFIER,
                           RESULT_VALUE, DETECTION_LIMIT_VALUE, DETECTION_LIMIT_UNIT,
                           DETECTION_LIMIT_TYPE, CROSSWALK_ID)
@@ -326,7 +329,7 @@ get_cyan_data <- function(cyan_connection, collect = FALSE,
   output <- dplyr::inner_join(location, activity,
                               by = "LOCATION_ID", suffix = c(".LOCATION", ".ACTIVITY"))
   output <- dplyr::inner_join(output, result,
-                              by = "ACTIVITY_ID", suffix = c(".ACTIVITY", ".RESULT"))
+                              by = "GLRI_ACTIVITY_ID", suffix = c(".ACTIVITY", ".RESULT"))
   output <- dplyr::inner_join(output, parameter,
                               by = "PARAMETER_ID", suffix = c(".RESULT", ".PARAMETER"))
   output <- dplyr::inner_join(output, method,
@@ -448,7 +451,7 @@ get_bivariate <- function(cyan_connection, parameter_1, parameter_2,
 #'
 #'
 #' @export
-#'
+#'This is going to need to be fixed!!!!!!!!!
 
 add_GMT_time <- function(cyan_data) {
 
@@ -543,6 +546,7 @@ add_solar_noon <- function(cyan_data) {
   return(output)
 
 }
+# This area is hard coded to WQP params
 
 #' Add columns for trophic status
 #'
@@ -718,3 +722,4 @@ add_EPA_recreational_threshold <- function(cyan_data) {
   return(cyan_data)
 
 }
+
