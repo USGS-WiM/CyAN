@@ -77,6 +77,7 @@ generate_location_index <- function(cyan_connection) {
 }
 
 #y <- generate_location_index(x)
+#print(y)
 #' Generate a table of parameter identifiers and their short names
 #'
 #' @param cyan_connection a CyAN database connection from \code{connect_cyan()}

@@ -5,6 +5,8 @@ library(leaflet)
 library(htmltools)
 library(dplyr)
 library(fs)
+library(shinyjqui)
+library(shinyjs)
 
 options(shiny.maxRequestSize=2000*1024^2)
 
@@ -20,7 +22,7 @@ null_if_blank_as_num <- function(x) {
 
 ui <- dashboardPage(
 
-  dashboardHeader(title = "CyAN"),
+  dashboardHeader(title = "GLRI Field Tool"),
 
   dashboardSidebar(
     sidebarMenu(id = "sidebar",
@@ -32,6 +34,7 @@ ui <- dashboardPage(
       conditionalPanel("input.sidebar == 'bivariate_plot'",
         uiOutput("bivariate_parameter_controls"),
         checkboxInput("biv_map_limit", label = "Limit to map bounds", value=TRUE),
+        #Set this via epoch or data range.
         sliderInput("biv_years", label = "Years:", min = 1975, max = 2019,
                     value = c(1975, 2016), sep = ""),
         selectInput("biv_color", "Highlight", choices=c("Parameter 1 methods" = "METHOD_ID.1",
@@ -61,8 +64,10 @@ ui <- dashboardPage(
             includeScript("gomap.js")
           ),
           leafletOutput("map", width = "100%", height = "100%"),
-          absolutePanel(id="controls", class="panel panel-default", fixed=TRUE,
-                        draggable=TRUE, top=60, left="auto", right=20, bottom="auto",
+          #Gets rid of that annoying close on click issue by using jqui_draggable
+          jqui_draggable(
+            absolutePanel(id="controls", class="panel panel-default", fixed=TRUE,
+                        draggable=FALSE, top=60, left="auto", right=20, bottom="auto",
                         width=330, height="auto",
 
                         helpText(" "),
@@ -72,7 +77,9 @@ ui <- dashboardPage(
                         radioButtons("tiles", "View layer:", choices=c("NHD", "Streets"),
                                      selected="Streets", inline=TRUE),
                         actionButton("show_points", "Show points")
+
           ),
+          options = list(cancel = ".selectize-control")),
           absolutePanel(id="querycontrols", class="panel panel-default", fixed=TRUE,
                         draggable=TRUE, top=60, left=20, right="auto", bottom="auto",
                         width=400, height="auto",
@@ -216,7 +223,7 @@ server <- function(input, output) {
     showNotification("Finished!", duration = 5)
     locations
   })
-
+  #try to fix here first
   output$filter_points_parameter <- renderUI({
 
     if(is.null(cyan_connection()))
@@ -224,8 +231,8 @@ server <- function(input, output) {
 
     choices <- parameter_index()$PARAMETER_ID
     names(choices) <- parameter_index()$SHORT_NAME
-
-    selectizeInput("parms_s", label = NULL, choices = choices, selected = NULL, multiple = TRUE)
+    #Added option = list(plugins = list('remove_button')) to make the list mutation options keyboard free.
+    selectizeInput("parms_s", label = NULL, choices = choices, selected = NULL, multiple = TRUE, options = list(plugins = list('remove_button')))
   })
 
   output$map <- renderLeaflet({
@@ -285,7 +292,7 @@ server <- function(input, output) {
     mapData
 
   })
-
+  #This is layer control
   observe({
 
     if(input$tiles=="NHD") {
@@ -301,14 +308,14 @@ server <- function(input, output) {
     }
 
   })
-
+  #This is render dots?
   observe({
 
     leafletProxy("map") %>% clearShapes() %>%
       addCircles(data=mapData(), popup = ~htmlEscape(LOCATION_NAME), color='orangered',
                  fillColor='orangered', fillOpacity=0.9, opacity=0.9, radius=15)
   })
-
+  #This is carinal boxes?
   output$n_lat_box <- renderUI({
 
     if(input$fill_bounds) {
@@ -352,7 +359,7 @@ server <- function(input, output) {
     textInput("s_lat", "South Latitude", value=v)
 
   })
-
+  #This is left menu param select
   output$parameter_choices <- renderUI({
 
     if(is.null(parameter_index()))
@@ -364,7 +371,7 @@ server <- function(input, output) {
     selectInput("parms", "Parameters:",  choices = choices, multiple = TRUE)
 
   })
-
+  #This is state options?
   output$state_choices <- renderUI({
 
     states <- state.abb[!(state.abb %in% c("AK", "HI"))]
@@ -374,7 +381,7 @@ server <- function(input, output) {
 
 
   })
-
+  #This is download manager
   output$download_data <- downloadHandler(
     filename = function() {
       paste0(input$download_filename, ".csv")
@@ -396,7 +403,7 @@ server <- function(input, output) {
       }
 
       download_notification <- showNotification("Preparing data...", duration = NULL)
-
+      #This is left menu check boxes
       output <- get_cyan_data(cyan_connection = cyan_connection(),
                               collect = TRUE,
                               north_latitude = n_lat, south_latitude = s_lat,
