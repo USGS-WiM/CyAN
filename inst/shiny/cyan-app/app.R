@@ -35,7 +35,7 @@ ui <- dashboardPage(
         uiOutput("bivariate_parameter_controls"),
         checkboxInput("biv_map_limit", label = "Limit to map bounds", value=TRUE),
         #Set this via epoch or data range.
-        sliderInput("biv_years", label = "Years:", min = 1975, max = 2019,
+        sliderInput("biv_years", label = "Years:", min = 1975, max = year(Sys.Date()),
                     value = c(1975, 2016), sep = ""),
         selectInput("biv_color", "Highlight", choices=c("Parameter 1 methods" = "METHOD_ID.1",
                                                        "Parameter 2 methods" = "METHOD_ID.2")),
@@ -80,62 +80,64 @@ ui <- dashboardPage(
 
           ),
           options = list(cancel = ".selectize-control")),
-          absolutePanel(id="querycontrols", class="panel panel-default", fixed=TRUE,
-                        draggable=TRUE, top=60, left=20, right="auto", bottom="auto",
-                        width=400, height="auto",
-                        textInput("download_filename", "Output file name (no extension"),
-                        checkboxInput("fill_bounds", "Fill bounds from map", value = TRUE),
-                        fluidRow(
-                          column(4),
-                          column(4, uiOutput("n_lat_box")),
-                          column(4)
-                        ),
-                        fluidRow(
-                          column(1),
-                          column(4, uiOutput("w_long_box")),
-                          column(2),
-                          column(4, uiOutput("e_long_box")),
-                          column(1)
-                        ),
-                        fluidRow(
-                          column(4),
-                          column(4, uiOutput("s_lat_box")),
-                          column(4)
-                        ),
-                        fluidRow(
-                          column(1),
-                          column(10,
-                                 sliderInput("years", label = "Years:", min = 1975, max = 2019,
-                                             value = c(1975, 2016), sep = ""),
-                                 uiOutput("parameter_choices")
+          jqui_draggable(
+            absolutePanel(id="querycontrols", class="panel panel-default", fixed=TRUE,
+                          draggable=TRUE, top=60, left=20, right="auto", bottom="auto",
+                          width=400, height="auto",
+                          textInput("download_filename", "Output file name (no extension"),
+                          checkboxInput("fill_bounds", "Fill bounds from map", value = TRUE),
+                          fluidRow(
+                            column(4),
+                            column(4, uiOutput("n_lat_box")),
+                            column(4)
                           ),
-                          column(1)
-                        ),
-                        fluidRow(
-                          column(5, textInput("tier", "Tier:", value = "4.0")),
-                          column(1),
-                          column(5, uiOutput("state_choices"))
-                        ),
-                        fluidRow(
-                          column(6, checkboxInput("add_GMT", "Add GMT datetime"),
-                                 value = FALSE),
-                          column(6, checkboxInput("add_solar_noon", "Add solar noon flag",
-                                                  value = FALSE))
-                        ),
-                        fluidRow(
-                          column(6, checkboxInput("add_trophic_status", "Add trophic status",
-                                 value = FALSE)),
-                          column(6, checkboxInput("add_who_thresholds", "Add WHO thresholds",
-                                 value = FALSE))
-                        ),
-                        fluidRow(
-                          column(6, checkboxInput("add_epa_rec", "Add EPA thresholds",
-                                                  value = FALSE)),
-                          column(6)
-                        ),
-                        downloadButton("download_data")
+                          fluidRow(
+                            column(1),
+                            column(4, uiOutput("w_long_box")),
+                            column(2),
+                            column(4, uiOutput("e_long_box")),
+                            column(1)
+                          ),
+                          fluidRow(
+                            column(4),
+                            column(4, uiOutput("s_lat_box")),
+                            column(4)
+                          ),
+                          fluidRow(
+                            column(1),
+                            column(10,
+                                   sliderInput("years", label = "Years:", min = 1975, max = year(Sys.Date()),
+                                               value = c(1975, 2016), sep = ""),
+                                   uiOutput("parameter_choices")
+                            ),
+                            column(1)
+                          ),
+                          fluidRow(
+                            column(5, textInput("tier", "Tier:", value = "4.0")),
+                            column(1),
+                            column(5, uiOutput("state_choices"))
+                          ),
+                          fluidRow(
+                            column(6, checkboxInput("add_GMT", "Add GMT datetime"),
+                                   value = FALSE),
+                            column(6, checkboxInput("add_solar_noon", "Add solar noon flag",
+                                                    value = FALSE))
+                          ),
+                          fluidRow(
+                            column(6, checkboxInput("add_trophic_status", "Add trophic status",
+                                   value = FALSE)),
+                            column(6, checkboxInput("add_who_thresholds", "Add WHO thresholds",
+                                   value = FALSE))
+                          ),
+                          fluidRow(
+                            column(6, checkboxInput("add_epa_rec", "Add EPA thresholds",
+                                                    value = FALSE)),
+                            column(6)
+                          ),
+                          downloadButton("download_data")
 
-          )
+            ),
+            options = list(cancel = ".selectize-control"))
 
         )
       ),
