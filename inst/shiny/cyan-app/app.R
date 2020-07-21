@@ -35,7 +35,7 @@ ui <- dashboardPage(
         uiOutput("bivariate_parameter_controls"),
         checkboxInput("biv_map_limit", label = "Limit to map bounds", value=TRUE),
         #Set this via epoch or data range.
-        sliderInput("biv_years", label = "Years:", min = 1975, max = year(Sys.Date()),
+        sliderInput("biv_years", label = "Years:", min = 1975, max = as.numeric(format(Sys.Date(), "%Y")),
                     value = c(1975, 2016), sep = ""),
         selectInput("biv_color", "Highlight", choices=c("Parameter 1 methods" = "METHOD_ID.1",
                                                        "Parameter 2 methods" = "METHOD_ID.2")),
@@ -65,50 +65,55 @@ ui <- dashboardPage(
           ),
           leafletOutput("map", width = "100%", height = "100%"),
           #Gets rid of that annoying close on click issue by using jqui_draggable
-          jqui_draggable(
-            absolutePanel(id="controls", class="panel panel-default", fixed=TRUE,
-                        draggable=FALSE, top=60, left="auto", right=20, bottom="auto",
-                        width=330, height="auto",
+          #jqui_draggable(
+           # absolutePanel(id="controls", class="panel panel-default", fixed=TRUE,
+            #            draggable=FALSE, top=60, left="auto", right=20, bottom="auto",
+             #           width=330, height="auto",
 
-                        helpText(" "),
-                        radioButtons("parm_logic", "Parameters:", choices=c("At least one", "All of")),
-                        helpText(" "),
-                        uiOutput("filter_points_parameter"),
-                        radioButtons("tiles", "View layer:", choices=c("NHD", "Streets"),
-                                     selected="Streets", inline=TRUE),
-                        actionButton("show_points", "Show points")
+              #          helpText(" "),
+               #         radioButtons("parm_logic", "Parameters:", choices=c("At least one", "All of")),
+                #        helpText(" "),
+                 #       uiOutput("filter_points_parameter"),
+                  #      radioButtons("tiles", "View layer:", choices=c("NHD", "Streets"),
+                   #                  selected="Streets", inline=TRUE),
+                    #    actionButton("show_points", "Show points")
 
-          ),
-          options = list(cancel = ".selectize-control")),
+          #),
+          #options = list(cancel = ".selectize-control")),
           jqui_draggable(
             absolutePanel(id="querycontrols", class="panel panel-default", fixed=TRUE,
                           draggable=TRUE, top=60, left=20, right="auto", bottom="auto",
                           width=400, height="auto",
-                          textInput("download_filename", "Output file name (no extension"),
-                          checkboxInput("fill_bounds", "Fill bounds from map", value = TRUE),
-                          fluidRow(
-                            column(4),
-                            column(4, uiOutput("n_lat_box")),
-                            column(4)
-                          ),
-                          fluidRow(
-                            column(1),
-                            column(4, uiOutput("w_long_box")),
-                            column(2),
-                            column(4, uiOutput("e_long_box")),
-                            column(1)
-                          ),
-                          fluidRow(
-                            column(4),
-                            column(4, uiOutput("s_lat_box")),
-                            column(4)
-                          ),
+
+                          #textInput("download_filename", "Output file name (no extension"),
+                          #checkboxInput("fill_bounds", "Fill bounds from map", value = TRUE),
+                          #fluidRow(
+                           # column(4),
+                            #column(4, uiOutput("n_lat_box")),
+                            #column(4)
+                          #),
+                          #fluidRow(
+                            #column(1),
+                            #column(4, uiOutput("w_long_box")),
+                            #column(2),
+                            #column(4, uiOutput("e_long_box")),
+                            #column(1)
+                          #),
+                          #fluidRow(
+                            #column(4),
+                            #column(4, uiOutput("s_lat_box")),
+                            #column(4)
+                          #),
                           fluidRow(
                             column(1),
                             column(10,
-                                   sliderInput("years", label = "Years:", min = 1975, max = year(Sys.Date()),
+                                   sliderInput("years", label = "Years:", min = 1975, max = as.numeric(format(Sys.Date(), "%Y")),
                                                value = c(1975, 2016), sep = ""),
-                                   uiOutput("parameter_choices")
+                                   radioButtons("parm_logic", "Parameters:", choices=c("At least one", "All of")),
+                                   uiOutput("parameter_choices"),
+                                   radioButtons("tiles", "View layer:", choices=c("NHD", "Streets"),
+                                                selected="Streets", inline=TRUE),
+                                   actionButton("show_points", "Show points")
                             ),
                             column(1)
                           ),
@@ -141,6 +146,8 @@ ui <- dashboardPage(
 
         )
       ),
+
+      #End Map
       tabItem(tabName = "bivariate_plot",
         box(
           plotOutput("bivariate_plot", brush = brushOpts(id = "zoom_brush", resetOnNew = FALSE),
@@ -234,7 +241,7 @@ server <- function(input, output) {
     choices <- parameter_index()$PARAMETER_ID
     names(choices) <- parameter_index()$SHORT_NAME
     #Added option = list(plugins = list('remove_button')) to make the list mutation options keyboard free.
-    selectizeInput("parms_s", label = NULL, choices = choices, selected = NULL, multiple = TRUE, options = list(plugins = list('remove_button')))
+    selectizeInput("parms", label = NULL, choices = choices, selected = NULL, multiple = TRUE, options = list(plugins = list('remove_button')))
   })
 
   output$map <- renderLeaflet({
@@ -257,12 +264,12 @@ server <- function(input, output) {
     zw <- as.character(c(bounds$north, bounds$east, bounds$south, bounds$west))
     zw
   })
-
+#Make map dot parse here
   mapData <- reactive({
 
     input$show_points
     isolate({
-      selected_parameters <- input$parms_s
+      selected_parameters <- input$parms
       zoom <- as.numeric(zoomWindow())
       points <- location_index()
     })
@@ -277,6 +284,9 @@ server <- function(input, output) {
         }, ind = points)
         mapData <- Reduce(intersect, s)
       } else {
+        #years parser here
+        print(points)
+        #points <- filter(points, START_DATE %between% )
         mapData <- filter(points, PARAMETER_ID %in% selected_parameters) %>%
           distinct()
       }
@@ -363,14 +373,14 @@ server <- function(input, output) {
   })
   #This is left menu param select
   output$parameter_choices <- renderUI({
-
+    #print(input$years[1])
     if(is.null(parameter_index()))
       return(NULL)
 
     choices <- parameter_index()$PARAMETER_ID
     names(choices) <- parameter_index()$SHORT_NAME
 
-    selectInput("parms", "Parameters:",  choices = choices, multiple = TRUE)
+    selectizeInput("parms", "Parameters:",  choices = choices, multiple = TRUE, options = list(plugins = list('remove_button')))
 
   })
   #This is state options?

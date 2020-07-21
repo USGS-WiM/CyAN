@@ -14,7 +14,7 @@
 #'
 #' @export
 
-#test <- "D:\\DEV\\Cyan_database\\GLRI\\GLRItest2_2.dB"
+test <- "D:\\DEV\\Cyan_database\\GLRI\\GLRItest2_2.dB"
 connect_cyan <- function(path) {
 
   if(!file.exists(path)) {
@@ -32,7 +32,7 @@ connect_cyan <- function(path) {
   return(cyan_connection)
 
 }
-#x = connect_cyan(test)
+x = connect_cyan(test)
 #' Generate an index of locations and parameters from the database
 #'
 #' Based on the CyAN database connection, generate an index of all unique combinations
@@ -52,32 +52,45 @@ connect_cyan <- function(path) {
 #' @export
 #'
 
+get_year <-function(dates) {
+  print (dates)
+  for (i in dates[[1]]){
+    print(i)
+  }
+
+}
+
+
 generate_location_index <- function(cyan_connection) {
-  print("here")
+  #print("here")
   LOCATION_ID <- LOCATION_NAME <- LATITUDE <- LONGITUDE <-
-    ACTIVITY_ID <- PARAMETER_ID <- ".dplyr.var"
-  print("here")
+    ACTIVITY_ID <- PARAMETER_ID <- START_DATE <-".dplyr.var"
+  #print("here")
   location <- dplyr::tbl(cyan_connection, "location")
+  #print("here")
   location <- dplyr::select(location, LOCATION_ID, LOCATION_NAME, LATITUDE, LONGITUDE)
   activity <- dplyr::tbl(cyan_connection, "ACTIVITY")
-  activity <- dplyr::select(activity, LOCATION_ID, GLRI_ACTIVITY_ID)
+  activity <- dplyr::select(activity, LOCATION_ID, GLRI_ACTIVITY_ID, START_DATE)
   result <- dplyr::tbl(cyan_connection, "RESULT")
   result <- dplyr::select(result, GLRI_ACTIVITY_ID, PARAMETER_ID)
-
   location_index <- dplyr::inner_join(location, activity, by = "LOCATION_ID")
+  dex <- dplyr::select(activity, START_DATE)
+  get_year(dplyr::collect(dex, stringAsFactors = FALSE))
+
   location_index <- dplyr::inner_join(location_index, result, by = "GLRI_ACTIVITY_ID")
-  location_index <- dplyr::select(location_index, LOCATION_ID, PARAMETER_ID)
+  location_index <- dplyr::select(location_index, LOCATION_ID, PARAMETER_ID, START_DATE)
   location_index <- dplyr::distinct(location_index)
   location_index <- dplyr::left_join(location_index, location, by = "LOCATION_ID")
-  location_index <- dplyr::select(location_index, LOCATION_NAME, LATITUDE, LONGITUDE, PARAMETER_ID)
+  #print(location_index)
+  location_index <- dplyr::select(location_index, LOCATION_NAME, LATITUDE, LONGITUDE, PARAMETER_ID, START_DATE)
+  #print("here")
   location_index <- dplyr::collect(location_index)
-
   return(location_index)
 
 }
 
-#y <- generate_location_index(x)
-#print(y)
+y <- generate_location_index(x)
+print(y)
 #' Generate a table of parameter identifiers and their short names
 #'
 #' @param cyan_connection a CyAN database connection from \code{connect_cyan()}
@@ -99,14 +112,13 @@ generate_location_index <- function(cyan_connection) {
 #' @export
 
 generate_parameter_index <- function(cyan_connection, has_data = FALSE) {
-
   PARAMETER_ID <- SHORT_NAME <- ".dplyr.var"
-
   parameter_list <- dplyr::tbl(cyan_connection, "PARAMETER")
   parameter_list <- dplyr::select(parameter_list, PARAMETER_ID, SHORT_NAME)
   parameter_list <- dplyr::collect(parameter_list)
 
   if(has_data) {
+
     parameter_index <- dplyr::tbl(cyan_connection, "RESULT")
     parameter_index <- dplyr::select(parameter_index, PARAMETER_ID)
     parameter_index <- dplyr::distinct(parameter_index)
@@ -119,7 +131,7 @@ generate_parameter_index <- function(cyan_connection, has_data = FALSE) {
   return(parameter_index)
 
 }
-#generate_parameter_index(x)
+generate_parameter_index(x)
 #' Get data from CyAN
 #'
 #' Basic data query from the CyAN database based on a number of parameters,
