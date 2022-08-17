@@ -1,3 +1,8 @@
+# Archived
+
+This is an archived repository. For active repositories related to CyAN/GLRI, see:
+(CyAN-Web)[https://github.com/USGS-WiM/CyAN-Web]
+(CyAN_DB)[https://github.com/USGS-WiM/CyAN_DB]
 
 # CyAN
 
@@ -32,6 +37,7 @@ First load the package:
 ```
 library(CyAN)
 ```
+
 For an introduction to the package, and to see an example workflow, view the package vignette:
 
 ```r
@@ -43,6 +49,7 @@ This package also includes an interactive app that can be used for exploring ava
 ```r
 run_CyAN()
 ```
+
 ## Disclaimer
 
 This software is in the public domain because it contains materials that originally came from the U.S. Geological Survey, an agency of the United States Department of Interior. For more information, see the official USGS copyright policy
